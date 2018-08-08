@@ -1,7 +1,6 @@
 #!/usr/bin/python
 
 from Oedipus.utils.graphics import prettyPrint
-from Levenshtein import distance
 import glob, os, sys, re
 import numpy
 

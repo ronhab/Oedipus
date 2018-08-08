@@ -14,6 +14,7 @@ from Oedipus.gadgets import clustering
 from Oedipus.gadgets import feature_extraction
 from Oedipus.gadgets import data_visualization
 from Oedipus.gadgets import program_generation
+from Oedipus.gadgets import random_programs
 ######################
 # OS Utility imports #
 ######################
@@ -21,14 +22,13 @@ from Oedipus.gadgets import program_generation
 import time, sys, os, subprocess
 import shutil, glob, argparse, random
 import numpy
-from Levenshtein import distance
 
 
 garbage = []
 
 def defineArguments():
     parser = argparse.ArgumentParser(prog="oedipus_tool.py", description="Uses the \"Oedipus\" platform to learn and cluster/classify Tigress-generated obfuscated programs according to the transformations they employ.", usage="python oedipus_tool.py [options]")
-    parser.add_argument("-m", "--mode", help="The requested mode of operation.", choices=["generate", "classify-exp1", "classify-exp2", "extract", "extract-from-traces", "visualize", "gather-stats", "filter-traces"], required=True, default="classify-exp1")
+    parser.add_argument("-m", "--mode", help="The requested mode of operation.", choices=["generate", "classify-exp1", "classify-exp2", "extract", "extract-from-traces", "visualize", "gather-stats", "filter-traces", "random-programs"], required=True, default="classify-exp1")
     parser.add_argument("-g", "--statlogfile", help="The file containing a dump of classification results.", required=False, default="log.txt")
     parser.add_argument("-s", "--sourcedir", help="The path to the directory containing the [un]obfuscated source code files.", required=False, default=".")
     parser.add_argument("-p", "--originalprograms", help="The path to the directory containing the original, unobfuscated programs.", required=False, default=".")
@@ -256,7 +256,7 @@ def main():
                     programName = program.replace(arguments.originalprograms, "").replace("/","") # Isolate program name
                     # TODO: Important: For 40 programs, programs are like "anagram_1231231231_12.c"
                     # TODO: for "obf" programs, programs are like "empty-Seed1-Random......-addOpaque16.c"
-                    separator = "_" if arguments.sourcedir.find("40programs") != - 1 else "-"
+                    separator = "_"
                     #print "%s/%s%s*.%s" % (arguments.sourcedir, programName.replace(".c", ""), separator, arguments.datatype)
                     obfuscatedVersions = glob.glob("%s/%s%s*.%s" % (arguments.sourcedir, programName.replace(".c", ""), separator, arguments.datatype)) 
                     #print programName, len(obfuscatedVersions)
@@ -268,7 +268,7 @@ def main():
                     programName = program.replace(arguments.originalprograms, "").replace("/","") # Isolate program name
                     # TODO: Important: For 40 programs, programs are like "anagram_1231231231_12.c"
                     # TODO: for "obf" programs, programs are like "empty-Seed1-Random......-addOpaque16.c"
-                    separator = "_" if arguments.sourcedir.find("40programs") != - 1 else "-"
+                    separator = "_"
                     obfuscatedVersions = glob.glob("%s/%s%s*.%s" % (arguments.sourcedir, programName.replace(".c", ""), separator, arguments.datatype)) 
                     if len(obfuscatedVersions) > 0:
                        tempTest += obfuscatedVersions
@@ -382,6 +382,18 @@ def main():
                 prettyPrint("Successfully extracted %s TF-IDF features from traces with \"%s\" extension" % (maxFeatures, inExtension))
             else:
                 prettyPrint("Some error occurred during TF-IDF feature extraction", "warning")
+
+        ########################################################
+        # MODE XII: Generate random programs                   #
+        ########################################################
+        elif arguments.mode == "random-programs":
+            # Retrieve the necessary parameters
+            source_dir = raw_input("Output folder: ")
+            number_of_programs = raw_input("Number of programs: ")
+            if random_programs.generate_random_programs(source_dir, int(number_of_programs), 'SECRET'):
+                prettyPrint("Successfully generated %d random programs" % int(number_of_programs))
+            else:
+                prettyPrint("Some error occurred during random program generation", "warning")
 
     except Exception as e:
         #global garbage

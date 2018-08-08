@@ -6,7 +6,8 @@
 from Oedipus.utils.data import *
 from Oedipus.utils.misc import *
 from Oedipus.utils.graphics import *
-import matplotlib.pyplot as pyplot
+import matplotlib
+matplotlib.use('Agg')
 import pylab as P
 from mpl_toolkits.mplot3d import Axes3D
 import pandas as pd

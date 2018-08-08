@@ -6,7 +6,7 @@
 from Oedipus.utils.data import *
 from Oedipus.utils.misc import *
 from Oedipus.utils.graphics import *
-import glob, subprocess, time, os, threading, shutil
+import glob, subprocess, time, os, threading, shutil, traceback
 import numpy
 import ghmm
 from gensim import corpora, models, similarities
@@ -58,11 +58,11 @@ def compileFile(targetFile):
     outFile_strip = targetFile[targetFile.rfind("/")+1:].replace(".c", ".outs")
     #outFile = "%s_%s.out" % (fileName, aoutTimestamp)
     gccArgs = ["gcc", "-Wl,--unresolved-symbols=ignore-in-object-files","-std=c99", targetFile, "-o", outFile]
-    gccArgs_strip = ["gcc", "-s", "-Wl,--unresolved-symbols=ignore-in-object-files","-std=c99", targetFile, "-o", outFile_strip]
+    stripArgs = ["strip", "-s", "-K", "main", "-K", "SECRET", "-o", outFile_strip, outFile]
     prettyPrint("Compiling \"%s\"" % targetFile, "debug")
     subprocess.Popen(gccArgs, stderr=subprocess.STDOUT, stdout=subprocess.PIPE).communicate()[0]
-    prettyPrint("Compiling \"%s\" with \"-s\"" % targetFile, "debug")
-    subprocess.Popen(gccArgs_strip, stderr=subprocess.STDOUT, stdout=subprocess.PIPE).communicate()[0]
+    prettyPrint("stripping \"%s\"" % targetFile, "debug")
+    subprocess.Popen(stripArgs, stderr=subprocess.STDOUT, stdout=subprocess.PIPE).communicate()[0]
     # Check if compilation succeeded by checking for existence of "a.out"
     if not os.path.exists(outFile) or not os.path.exists(outFile_strip):
         prettyPrint("Compiling \"%s\" failed. Skipping file" % targetFile , "warning")
@@ -145,19 +145,6 @@ def extractFeaturesFromITrace(instructionTrace):
     instructionFeatures += [dataToArithmetic, dataToLogic, dataToControl, logicToArithmetic, logicToControl, logicToData]
 
     return instructionFeatures
-
-def innerListLevenshtein(l):
-    # Calculate the average Levenshtein distance between strings within a list
-    if len(l) < 2:
-        #print "[*] List is too short. %s" % getTimestamp()
-        return 0.0
-    allDistances, index, ops = [], 1, 0
-    for referenceAction in range(len(l)):
-        for variableAction in range(index, len(l)):
-            allDistances.append(float(distance(l[referenceAction], l[variableAction])))
-            ops += 1
-        index += 1
-    return round(reduce(lambda x, y: x + y, allDistances) / ops, 2)
 
 def _generateDisassembly(targetFile, outFile, outFile_s):
     """ Generates a ".dyndis" file for a given file using a randomly generated testcase """
@@ -684,11 +671,16 @@ def extractTFIDFMemoryFriendly(source, fileextension, maxfeatures=128, outextens
         # Save the tokens to file and load them again just to get the cross-document count (:s)
         filename = "corpus_%s_%s" % (str(int(time.time())), fileextension)
         corpus_mem_friendly.tokens.save_as_text(filename)
+        print('corpus: {0}'.format(filename))
         tokens = open(filename).read().split('\n')
         tokenTuples = []
         for t in tokens:
             if len(t) > 1:
-                tokenTuples.append((int(t.split('\t')[0]), int(t.split('\t')[2])))
+                t_split = t.split('\t')
+                if (len(t_split) >= 3):
+                    tokenTuples.append((int(t_split[0]), int(t_split[2])))
+                else:
+                    prettyPrint('token {0} has invalid format'.format(t), Warning)
         # Now sort them descendingly
         prettyPrint("Sorting the tokens according to their document frequency")
         #print tokenTuples #TODO: Remove me!!
@@ -704,7 +696,7 @@ def extractTFIDFMemoryFriendly(source, fileextension, maxfeatures=128, outextens
         prettyPrint("Picking the best %s features from the sorted tokens list" % maxfeatures)
         for vectorIndex in range(len(allVectors)):
             prettyPrint("Processing vector #%s out of %s vectors" % (vectorIndex+1, len(allVectors)))
-            for featureIndex in range(maxfeatures):
+            for featureIndex in range(min(maxfeatures, len(tokenTuples))):
                 # a. Get the token key
                 tokenKey = tokenTuples[featureIndex][0]
                 #print allVectors[vectorIndex], tokenKey, getTupleKey(allVectors[vectorIndex], tokenKey)
@@ -728,7 +720,7 @@ def extractTFIDFMemoryFriendly(source, fileextension, maxfeatures=128, outextens
         os.unlink(filename) 
 
     except Exception as e:
-        prettyPrint("Error encountered in \"extractTFIDFMemoryFriendly\": %s" % e, "error")
+        prettyPrint("Error encountered in \"extractTFIDFMemoryFriendly\": %s" % traceback.format_exc(), "error")
         return False
 
     return True

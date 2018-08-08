@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import random, string, os, glob
+import random, string, os, glob, shutil
 from datetime import datetime
 
 def checkRoot():
@@ -38,7 +38,7 @@ def getRandomAlphaNumeric(length=8):
     return ''.join(random.choice(string.ascii_letters + string.digits) for i in range(length))
 
 def getRandomString(length=8):
-    return ''.join(random.choice(string.lowercase) for i in range(length))
+    return ''.join(random.choice(string.ascii_lowercase) for i in range(length))
 
 def getTimestamp():
     return "[%s]"%str(datetime.now()).split(" ")[1]

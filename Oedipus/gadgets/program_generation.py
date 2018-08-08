@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import subprocess, threading, time, os
+import subprocess, threading, time, os, traceback
 from itertools import product
 from Oedipus.utils.data import *
 from Oedipus.utils.graphics import *
@@ -60,7 +60,7 @@ def generateMultipleObfuscations(currentFile, tigressDir, obfuscationLevel=1, ob
                 tigressCmd.append("--Functions=%s" % obfuscationFunction)
             
             #TODO: prepends "obf" to the generated file name
-            tigressCmd.append("--FilePrefix=obf%s" % obfuscationLevel+1) 
+            tigressCmd.append("--FilePrefix=obf{0}".format(obfuscationLevel+1))
 
             # Specify the output file
             if jitFlag:
@@ -97,7 +97,7 @@ def generateMultipleObfuscations(currentFile, tigressDir, obfuscationLevel=1, ob
                 os.unlink(currentFile.replace(".c", "_jitcopy.c"))
 
     except Exception as e:
-        prettyPrint("Error encountered in \"generateMultipleObfuscations\": %s" % e, "error")
+        prettyPrint("Error encountered in \"generateMultipleObfuscations\": %s" % traceback.format_exc(), "error")
         return False
 
     return True

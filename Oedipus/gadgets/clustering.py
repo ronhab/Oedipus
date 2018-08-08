@@ -11,7 +11,6 @@ from sklearn import metrics
 from sklearn.cluster import KMeans, AgglomerativeClustering
 import numpy
 from numpy.random import randn
-from Levenshtein import distance
 ####################
 # Defining Methods #
 ####################
