@@ -34,9 +34,9 @@ def plotAccuracyGraph(X, Y, Xlabel='Variable', Ylabel='Accuracy', graphTitle="Te
         # Add the data to the graph
         P.plot(X, Y, 'r-*', linewidth=1.0)
         # Save figure
-        prettyPrint("Saving figure to ./%s" % filename)#(graphTitle.replace(" ","_"), timestamp))
+        prettyPrint("Saving figure to .%s%s" % (os.sep, filename))
         P.tight_layout()
-        fig.savefig("./%s" % filename)#(graphTitle.replace(" ", "_"), timestamp))
+        fig.savefig(".%s%s" % (os.sep, filename))
         
     except Exception as e:
         prettyPrint("Error encountered in \"plotAccuracyGraph\": %s" % e, "error")
@@ -88,9 +88,9 @@ def plotReductionGraph(dataSamples, dataLabels, classNames, dimension=2, graphTi
         else:
             ax.legend([x for x in classNames], fontsize='xx-small', numpoints=1, fancybox=True)
 
-        prettyPrint("Saving results to ./%s" % filename)#(graphTitle, timestamp))
+        prettyPrint("Saving results to .%s%s" % (os.sep, filename))
         P.tight_layout()
-        fig.savefig("./%s" % filename)#(graphTitle, timestamp))
+        fig.savefig(".%s%s" % (os.sep, filename))
 
     except Exception as e:
         prettyPrint("Error encountered in \"plotReductionGraph\": %s" % e, "error")
@@ -102,7 +102,7 @@ def visualizeData(sourceDir, fileExtension, dimension, algorithm="tsne", filenam
     """ Reduces data to <dimension>-dimensional space using PCA and plots results """
     try:
         prettyPrint("Loading data samples of extension \"%s\" from \"%s\"" % (fileExtension, sourceDir))
-        dataFiles = sorted(glob.glob("%s/*.%s" % (sourceDir, fileExtension)))
+        dataFiles = sorted(glob.glob("%s%s*.%s" % (sourceDir, os.sep, fileExtension)))
         dataSamples, dataLabels, loadedClasses = [], [], []
         for dataPoint in dataFiles:
             if fileExtension == "triton":
@@ -153,7 +153,7 @@ def visualizeOriginal(sourceDir, fileExtension, dimension, algorithm="tsne", fil
     """ Plots original programs against their obfuscated versions in a <dimension>-dimensional space using PCA """
     try:
         prettyPrint("Loading the list of original programs")
-        originalFiles = list(set(sorted(glob.glob("%s/*.c" % sourceDir))) - set(sorted(glob.glob("%s/*_*.c" % sourceDir))))
+        originalFiles = list(set(sorted(glob.glob("%s%s*.c" % (sourceDir, os.sep)))) - set(sorted(glob.glob("%s%s*_*.c" % (sourceDir, os.sep)))))
         prettyPrint("Successfully retrieved %s original programs" % len(originalFiles))
         # Retrieve obfuscated versions of every program and plot them
         for program in originalFiles:

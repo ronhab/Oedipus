@@ -59,7 +59,7 @@ def main():
            if arguments.verbose == "yes":
                prettyPrint("Generating obfusted programs for programs under \"%s\"" %  arguments.sourcedir, "debug")
            # Get programs from source directory [random/pre-existent]
-           sourceFiles = sorted(glob.glob("%s/*.c" % arguments.sourcedir))
+           sourceFiles = sorted(glob.glob("%s%s*.c" % (arguments.sourcedir, os.sep)))
            if len(sourceFiles) < 1:
                prettyPrint("No files were found in \"%s\". Exiting" % arguments.sourcedir, "error")
                return
@@ -76,7 +76,7 @@ def main():
             if not os.path.exists(arguments.sourcedir):
                 prettyPrint("Unable to locate \"%s\". Exiting" % arguments.sourcedir, "error")
                 return
-            sourceFiles = sorted(glob.glob("%s/*.c" % arguments.sourcedir))
+            sourceFiles = sorted(glob.glob("%s%s*.c" % (arguments.sourcedir, os.sep)))
             if len(sourceFiles) < 1:
                 prettyPrint("No files were found in \"%s\". Exiting" % arguments.sourcedir)
             
@@ -220,7 +220,7 @@ def main():
         ##################################################################
         elif arguments.mode == "classify-exp2":
             # Retrieve the list of all programs
-            allPrograms = glob.glob("%s/*.c" % arguments.originalprograms)#list(set(sorted(glob.glob("%s/*.c" % arguments.sourcedir))) - set(sorted(glob.glob("%s/*-*.c" % arguments.sourcedir))))
+            allPrograms = glob.glob("%s%s*.c" % (arguments.originalprograms, os.sep))
             allPrograms.sort() # Makes it easier to keep track of current programs in batch
             totalPrograms = len(allPrograms)
             prettyPrint("Successfully retrieved %s original programs" % totalPrograms)
@@ -253,23 +253,23 @@ def main():
                 # 1- First we need to retrieve the obfuscated versions of the
                 tempTraining, tempTest = [], []
                 for program in trainingPrograms:
-                    programName = program.replace(arguments.originalprograms, "").replace("/","") # Isolate program name
+                    programName = os.path.basename(program)
                     # TODO: Important: For 40 programs, programs are like "anagram_1231231231_12.c"
                     # TODO: for "obf" programs, programs are like "empty-Seed1-Random......-addOpaque16.c"
                     separator = "_"
                     #print "%s/%s%s*.%s" % (arguments.sourcedir, programName.replace(".c", ""), separator, arguments.datatype)
-                    obfuscatedVersions = glob.glob("%s/%s%s*.%s" % (arguments.sourcedir, programName.replace(".c", ""), separator, arguments.datatype)) 
+                    obfuscatedVersions = glob.glob("%s%s%s%s*.%s" % (arguments.sourcedir, os.sep, programName.replace(".c", ""), separator, arguments.datatype)) 
                     #print programName, len(obfuscatedVersions)
                     #print "%s/%s_*.%s" % (arguments.sourcedir, programName.replace(".c", ""), arguments.datatype)
                     if len(obfuscatedVersions) > 0:
                         tempTraining += obfuscatedVersions
                     #print programName, len(obfuscatedVersions)
                 for program in testPrograms:
-                    programName = program.replace(arguments.originalprograms, "").replace("/","") # Isolate program name
+                    programName = os.path.basename(program)
                     # TODO: Important: For 40 programs, programs are like "anagram_1231231231_12.c"
                     # TODO: for "obf" programs, programs are like "empty-Seed1-Random......-addOpaque16.c"
                     separator = "_"
-                    obfuscatedVersions = glob.glob("%s/%s%s*.%s" % (arguments.sourcedir, programName.replace(".c", ""), separator, arguments.datatype)) 
+                    obfuscatedVersions = glob.glob("%s%s%s%s*.%s" % (arguments.sourcedir, os.sep, programName.replace(".c", ""), separator, arguments.datatype)) 
                     if len(obfuscatedVersions) > 0:
                        tempTest += obfuscatedVersions
                 trainingPrograms, testPrograms = tempTraining, tempTest # Update the training and test programs
@@ -334,7 +334,7 @@ def main():
                 if arguments.verbose == "yes":
                     prettyPrint("Removing all TF-IDF files of the current batch", "debug")
                 rmCounter = 0
-                for featureFile in glob.glob("%s/*.%s_t*" % (arguments.sourcedir, arguments.datatype)): # TODO: This will remove tfidf_both you stupid fuck!!
+                for featureFile in glob.glob("%s%s*.%s_t*" % (arguments.sourcedir, os.sep, arguments.datatype)): # TODO: This will remove tfidf_both you stupid fuck!!
                     os.unlink(featureFile)
                     rmCounter += 1
                 prettyPrint("Successfully removed %s files" % rmCounter)

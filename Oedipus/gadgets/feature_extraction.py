@@ -7,8 +7,9 @@ from Oedipus.utils.data import *
 from Oedipus.utils.misc import *
 from Oedipus.utils.graphics import *
 import glob, subprocess, time, os, threading, shutil, traceback
+from operator import itemgetter
 import numpy
-import ghmm
+# import ghmm
 from gensim import corpora, models, similarities
 from gensim.corpora import dictionary
 from sklearn.decomposition import TruncatedSVD
@@ -260,7 +261,7 @@ def extractTFIDF(sourceDir, sourceFiles):
                 shutil.copy(outFile_strip.replace(".outs", ".objdumps"), sourceDir)
 
             # (2) Generate a disassembly trace file
-            _generateDisassembly(targetFile, outFile, outFile_strip)
+            # _generateDisassembly(targetFile, outFile, outFile_strip)
 
         # (3) After all files are done, load all the "dyndis" files and extract TF-IDF features from them.
         #disassemblyFiles = glob.glob("%s/*.dyndis" % sourceDir)
@@ -397,84 +398,84 @@ def extractInstrSwitchFrequency(sourceFiles):
         
     return True
     
-def extractHMMFeatures(sourceFiles):
-    """ Extracts HMM-similarity features from all files in a given directory """
-    allTraces = [] # List to store all traces for the HMM-similarity extraction     
-    try:
-        for targetFile in sourceFiles:
-            if os.path.exists(targetFile.replace(".c", ".seq")):
-                instructionAlphaSequence = open(targetFile.replace(".c", ".seq")).read()
-                allTraces.append( (instructionAlphaSequence, targetFile.replace(".c", ".hmm"), loadLabelFromFile(targetFile.replace(".c", ".metadata"))[0])) #TODO: Append a tuple of (trace, filename, cluster) for each data sample
-        if len(allTraces) < 1:
-            prettyPrint("No traces to process for HMM-similarity feature extraction. Skipping", "warning")
-        else:
-            allClusters = []
-            # Retrieve list of clusters
-            prettyPrint("Retrieving clusters")
-            for trace in allTraces:
-                if not trace[2] in allClusters:
-                    allClusters.append(trace[2])
-            # Gather traces belonging to different clusters
-            clusterTraces = []
-            for cluster in allClusters:
-                currentCluster = []
-                for trace in allTraces:
-                    if trace[2] == cluster:
-                        currentCluster.append(trace[0])
-                clusterTraces.append(currentCluster)
-                prettyPrint("Retrieved %s instances for cluster %s" % (len(currentCluster), cluster))
-            # Should wind up with list of lists each of which depict traces of a cluster
-            allHMMs = []
-            for cluster in allClusters:
-                # Build HMM for each cluster and use it to calculate likelihoods for all instances
-                prettyPrint("Building HMM for cluster \"%s\"" % cluster)
-                trainingSequences =  clusterTraces[ allClusters.index(cluster) ]
-                # Retrieve number of observations
-                observations = []
-                for sequence in trainingSequences:
-                    for o in sequence:
-                        if o not in observations:
-                            observations.append(o)
-                # Prepare matrices for HMM
-                A = numpy.random.random((len(allClusters), len(allClusters))).tolist()
-                B = numpy.random.random((len(allClusters), len(observations))).tolist()
-                Pi = numpy.random.random((len(allClusters),)).tolist()
-                sigma = ghmm.Alphabet(observations)
-                # Build HMM and train it using Baum-Welch algorithm
-                clusterHMM = ghmm.HMMFromMatrices(sigma, ghmm.DiscreteDistribution(sigma), A, B, Pi)
-                clusterHMM.baumWelch(ghmm.SequenceSet(clusterHMM.emissionDomain, trainingSequences))
-                # Add that to list of all HMM's
-                allHMMs.append((clusterHMM, observations))
-            # Finally, for every trace, calculate the feature vectors
-            prettyPrint("Calculating similarity features for traces")
-            for trace in allTraces:
-                featureVector = []
-                for hmm in allHMMs:
-                    # Make sure sequences contains observations supported by the current HMM
-                    sequence = []
-                    for obs in trace[0]:
-                        if obs in hmm[1]:
-                            sequence.append(obs)
-                    # Calculate the likelihood
-                    sequence = ghmm.EmissionSequence(ghmm.Alphabet(hmm[1]), sequence)
-                    featureVector.append(hmm[0].loglikelihood(sequence))
-                    featureFile = open(trace[1], "w")
-                    featureFile.write(str(featureVector))
-                    featureFile.close()
-        #############################################################################
+# def extractHMMFe7atures(sourceFiles):
+#     """ Extracts HMM-similarity features from all files in a given directory """
+#     allTraces = [] # List to store all traces for the HMM-similarity extraction     
+#     try:
+#         for targetFile in sourceFiles:
+#             if os.path.exists(targetFile.replace(".c", ".seq")):
+#                 instructionAlphaSequence = open(targetFile.replace(".c", ".seq")).read()
+#                 allTraces.append( (instructionAlphaSequence, targetFile.replace(".c", ".hmm"), loadLabelFromFile(targetFile.replace(".c", ".metadata"))[0])) #TODO: Append a tuple of (trace, filename, cluster) for each data sample
+#         if len(allTraces) < 1:
+#             prettyPrint("No traces to process for HMM-similarity feature extraction. Skipping", "warning")
+#         else:
+#             allClusters = []
+#             # Retrieve list of clusters
+#             prettyPrint("Retrieving clusters")
+#             for trace in allTraces:
+#                 if not trace[2] in allClusters:
+#                     allClusters.append(trace[2])
+#             # Gather traces belonging to different clusters
+#             clusterTraces = []
+#             for cluster in allClusters:
+#                 currentCluster = []
+#                 for trace in allTraces:
+#                     if trace[2] == cluster:
+#                         currentCluster.append(trace[0])
+#                 clusterTraces.append(currentCluster)
+#                 prettyPrint("Retrieved %s instances for cluster %s" % (len(currentCluster), cluster))
+#             # Should wind up with list of lists each of which depict traces of a cluster
+#             allHMMs = []
+#             for cluster in allClusters:
+#                 # Build HMM for each cluster and use it to calculate likelihoods for all instances
+#                 prettyPrint("Building HMM for cluster \"%s\"" % cluster)
+#                 trainingSequences =  clusterTraces[ allClusters.index(cluster) ]
+#                 # Retrieve number of observations
+#                 observations = []
+#                 for sequence in trainingSequences:
+#                     for o in sequence:
+#                         if o not in observations:
+#                             observations.append(o)
+#                 # Prepare matrices for HMM
+#                 A = numpy.random.random((len(allClusters), len(allClusters))).tolist()
+#                 B = numpy.random.random((len(allClusters), len(observations))).tolist()
+#                 Pi = numpy.random.random((len(allClusters),)).tolist()
+#                 sigma = ghmm.Alphabet(observations)
+#                 # Build HMM and train it using Baum-Welch algorithm
+#                 clusterHMM = ghmm.HMMFromMatrices(sigma, ghmm.DiscreteDistribution(sigma), A, B, Pi)
+#                 clusterHMM.baumWelch(ghmm.SequenceSet(clusterHMM.emissionDomain, trainingSequences))
+#                 # Add that to list of all HMM's
+#                 allHMMs.append((clusterHMM, observations))
+#             # Finally, for every trace, calculate the feature vectors
+#             prettyPrint("Calculating similarity features for traces")
+#             for trace in allTraces:
+#                 featureVector = []
+#                 for hmm in allHMMs:
+#                     # Make sure sequences contains observations supported by the current HMM
+#                     sequence = []
+#                     for obs in trace[0]:
+#                         if obs in hmm[1]:
+#                             sequence.append(obs)
+#                     # Calculate the likelihood
+#                     sequence = ghmm.EmissionSequence(ghmm.Alphabet(hmm[1]), sequence)
+#                     featureVector.append(hmm[0].loglikelihood(sequence))
+#                     featureFile = open(trace[1], "w")
+#                     featureFile.write(str(featureVector))
+#                     featureFile.close()
+#         #############################################################################
 
-    except Exception as e:
-        prettyPrint("Error encoutered: %s" % e, "error")
-        return False
+#     except Exception as e:
+#         prettyPrint("Error encoutered: %s" % e, "error")
+#         return False
         
-    return True 
+#     return True 
    
 def extractDifference(sourceDir, datatype):
     """ Extracts the differences between original programs and their obfuscated versions """
     try:
         # Retrieve original programs
         prettyPrint("Loading the list of original programs")
-        originalFiles = list(set(glob.glob("%s/*.%s" % (sourceDir, datatype))) - set(glob.glob("%s/*_*.%s" % (sourceDir, datatype))))
+        originalFiles = list(set(glob.glob("%s%s*.%s" % (sourceDir, os.sep, datatype))) - set(glob.glob("%s%s*_*.%s" % (sourceDir, os.sep, datatype))))
         prettyPrint("Successfully retrieved %s original programs" % len(originalFiles))
         counter = 0
         allDisassemblies = [] # To hold the difference disassembly files for TF-IDF extraction
@@ -497,7 +498,7 @@ def extractDifference(sourceDir, datatype):
                     
         prettyPrint("Successfully generated %s difference files" % counter)
               
-        sourceFiles = glob.glob("%s/*_*.%sdiff" % (sourceDir, datatype))
+        sourceFiles = glob.glob("%s%s*_*.%sdiff" % (sourceDir, os.sep, datatype))
         for targetFile in sourceFiles:
             allDisassemblies.append(open(targetFile).read())
                                 
@@ -523,7 +524,7 @@ def extractDifferenceFromTraces(sourceDir, datatype):
     try:
         # Retrieve original programs
         prettyPrint("Loading the list of original programs")
-        originalFiles = list(set(glob.glob("%s/*.%s" % (sourceDir, datatype))) - set(glob.glob("%s/*_*.%s" % (sourceDir, datatype))))
+        originalFiles = list(set(glob.glob("%s%s*.%s" % (sourceDir, os.sep, datatype))) - set(glob.glob("%s%s*_*.%s" % (sourceDir, os.sep, datatype))))
         prettyPrint("Successfully retrieved %s original programs" % len(originalFiles))
         counter = 0
         allTraces = [] # To hold the difference sequences for TF-IDF extraction
@@ -550,7 +551,7 @@ def extractDifferenceFromTraces(sourceDir, datatype):
                     
         prettyPrint("Successfully generated %s difference files" % counter)
               
-        sourceFiles = glob.glob("%s/*_*.%sdiff" % (sourceDir, datatype))
+        sourceFiles = glob.glob("%s%s*_*.%sdiff" % (sourceDir, os.sep, datatype))
         for targetFile in sourceFiles:
             allTraces.append(open(targetFile).read())
                                 
@@ -575,7 +576,7 @@ def extractTritonFeatures(sourceDir):
     """ Extracts some dynamic features from files in a specific directory using Triton """
     try:
         # Retrieve source files
-        sourceFiles = glob.glob("%s/*.c" % sourceDir)
+        sourceFiles = glob.glob("%s%s*.c" % (sourceDir, os.sep))
         if len(sourceFiles) < 1:
             prettyPrint("No source files were found under \"%s\"" % sourceDir, "warning")
             return False
@@ -603,7 +604,7 @@ def extractTritonFeatures(sourceDir):
             # Clean up
             cleanUp()
 
-        prettyPrint("Successfully generated %s \"Triton\" features files" % len(glob.glob("%s/*.triton" % sourceDir)))
+        prettyPrint("Successfully generated %s \"Triton\" features files" % len(glob.glob("%s%s*.triton" % (sourceDir, os.sep))))
 
     except Exception as e:
         prettyPrint("Error encountered in \"extractTritonFeatures\": %s" % e, "error")
@@ -613,13 +614,17 @@ def extractTritonFeatures(sourceDir):
 
 class MyCorpus(object):
     """ Helper class for the gensim-based TF-IDF extraction """
-    def __init__(self, docs):
+    def __init__(self, docs, corpus_file=None):
         self.documents = docs
         self.tokens = dictionary.Dictionary()
-        # Retrieve tokens form documents, populating the tokens dictionary
-        for doc in self.documents:
-            content = [[word for word in open(doc).read().lower().split() if word not in [",","%","(",")",",",":","\n","$"]]]
-            self.tokens.add_documents(content)
+
+        if corpus_file:
+            self.tokens = dictionary.Dictionary.load_from_text(corpus_file)
+        else:
+            # Retrieve tokens form documents, populating the tokens dictionary
+            for doc in self.documents:
+                content = [[word for word in open(doc).read().lower().split() if word not in [",","%","(",")",",",":","\n","$"]]]
+                self.tokens.add_documents(content)
         print "[*] Retrieved %s tokens from %s documents in the corpus" % (len(self.tokens), len(self.documents))
 
     def  __iter__(self):
@@ -649,10 +654,25 @@ def getTupleKey(l, k):
 def extractTFIDFMemoryFriendly(source, fileextension, maxfeatures=128, outextension="tfidf"):
     """ Extracts TF-IDF features from corpus using the memory friendly gensim library """
     try:
+        filename = None
+        existing_corpuses = glob.glob("corpus_*_%s" % fileextension)
+        if len(existing_corpuses) > 0:
+            print('Found existing corpuses:')
+            for index, corpus in enumerate(existing_corpuses):
+                print('%d. %s' % (index + 1, corpus))
+            print('0. ignore - create new corpus')
+            choice = int(input('enter your selection: '))
+            if choice > 0:
+                filename = existing_corpuses[choice - 1]
+        
         # Retrieve files (source can be a path or a list of files names)
         if type(source) == str:
             # Case 1: a path to a directory
-            allfiles = glob.glob("%s/*.%s" % (source, fileextension))
+            allfiles = glob.glob("%s%s*.%s" % (source, os.sep, fileextension))
+            tfidffiles = glob.glob("%s%s*.%s" % (source, os.sep, outextension))
+            if len(allfiles) == len(tfidffiles):
+                prettyPrint("All TF-IDF files were already generated - leaving...")
+                return True
         elif type(source) == list:
             # Case 2: a list of file names e.g. in 36-4 experiment
             allfiles = source
@@ -664,13 +684,17 @@ def extractTFIDFMemoryFriendly(source, fileextension, maxfeatures=128, outextens
         if len(allfiles) < 1:
             prettyPrint("No files of extension \"%s\" could be found in \"%s\"" % (fileextension, source), "warning")
             return False
-
         prettyPrint("Successfully retrieved %s files" % len(allfiles))
-        # Now instantiate an instance of the MyCorpus class
-        corpus_mem_friendly = MyCorpus(allfiles)
-        # Save the tokens to file and load them again just to get the cross-document count (:s)
-        filename = "corpus_%s_%s" % (str(int(time.time())), fileextension)
-        corpus_mem_friendly.tokens.save_as_text(filename)
+
+        if filename:
+            corpus_mem_friendly = MyCorpus(allfiles, corpus_file=filename)
+        else:
+            # Now instantiate an instance of the MyCorpus class
+            corpus_mem_friendly = MyCorpus(allfiles)
+            # Save the tokens to file and load them again just to get the cross-document count (:s)
+            filename = "corpus_%s_%s" % (str(int(time.time())), fileextension)
+            corpus_mem_friendly.tokens.save_as_text(filename)
+        
         print('corpus: {0}'.format(filename))
         tokens = open(filename).read().split('\n')
         tokenTuples = []
@@ -683,28 +707,19 @@ def extractTFIDFMemoryFriendly(source, fileextension, maxfeatures=128, outextens
                     prettyPrint('token {0} has invalid format'.format(t), Warning)
         # Now sort them descendingly
         prettyPrint("Sorting the tokens according to their document frequency")
-        #print tokenTuples #TODO: Remove me!!
-        tokenTuples.sort(cmp=cmpTuple)
-
-        # Build a list of vectors
-        allVectors = [v for v in corpus_mem_friendly]    
+        tokenTuples.sort(key=itemgetter(1), reverse=True)
 
         # Build a numpy matrix of zeros
         X = numpy.zeros((len(allfiles), maxfeatures))
 
         # Go over the first [maxfeatures] of the tokenTuples and populate the matrix
         prettyPrint("Picking the best %s features from the sorted tokens list" % maxfeatures)
-        for vectorIndex in range(len(allVectors)):
-            prettyPrint("Processing vector #%s out of %s vectors" % (vectorIndex+1, len(allVectors)))
+        for vectorIndex, vector in enumerate(corpus_mem_friendly):
+            prettyPrint("Processing vector #%d" % (vectorIndex+1))
             for featureIndex in range(min(maxfeatures, len(tokenTuples))):
                 # a. Get the token key
                 tokenKey = tokenTuples[featureIndex][0]
-                #print allVectors[vectorIndex], tokenKey, getTupleKey(allVectors[vectorIndex], tokenKey)
-                X[vectorIndex][featureIndex] = getTupleKey(allVectors[vectorIndex], tokenKey)
-
-        #print corpus_mem_friendly.tokens.token2id
-        #print tokenTuples
-        #print X
+                X[vectorIndex][featureIndex] = getTupleKey(vector, tokenKey)
            
         # Now apply the TF-IDF transformation
         optimusPrime = TfidfTransformer()
@@ -714,10 +729,10 @@ def extractTFIDFMemoryFriendly(source, fileextension, maxfeatures=128, outextens
         prettyPrint("Saving TF-IDF vectors to \"%s\" files" % outextension)
         for doc_index in range(len(allfiles)):
             tfidf_file = open(allfiles[doc_index].replace(fileextension, outextension), "w")
-            tfidf_file.write(str(X_tfidf.toarray()[doc_index,:].tolist()))
+            tfidf_file.write(numpy.array2string(X_tfidf[doc_index, :], separator=','))
             tfidf_file.close()
 
-        os.unlink(filename) 
+        # os.unlink(filename) 
 
     except Exception as e:
         prettyPrint("Error encountered in \"extractTFIDFMemoryFriendly\": %s" % traceback.format_exc(), "error")

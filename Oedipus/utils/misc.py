@@ -15,13 +15,13 @@ def cleanUp():
         shutil.rmtree("tempCCCC")
     if os.path.exists("script"):
         os.unlink("script")
-    executables = glob.glob("./*.out")
+    executables = glob.glob(".%s*.out" % os.sep)
     for exe in executables:
         os.unlink(exe)
-    scripts = glob.glob("./*.script")
+    scripts = glob.glob(".%s*.script" % os.sep)
     for script in scripts:
         os.unlink(script)
-    texts = glob.glob("./*.txt")
+    texts = glob.glob(".%s*.txt" % os.sep)
     for text in texts:
         os.unlink(text)
     if os.path.exists("log.txt"):
@@ -53,12 +53,8 @@ def getOriginalFileName(fileName, fileExtension=".c"):
     for i in range(10):
        originalFileName = originalFileName.replace(str(i),"")
     # Finally, remove any previous directories
-    slashIndex = originalFileName.find("/")
-    while slashIndex != -1:
-        originalFileName = originalFileName[slashIndex+1:]
-        slashIndex = originalFileName.find("/")
 
-    return originalFileName
+    return os.path.basename(originalFileName)
 
 def checkTestCaseSuccess(output):
     """ Searches the output of the GDB script for incentives of failure """

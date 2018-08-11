@@ -56,7 +56,7 @@ def loadArgumentsFromKLEE(fileName):
 def loadFeaturesFromDir(dirName, dataType, dataLabel="metadata"):
     """ Loads features all files in a directory into two lists """
     # Retrieve all files
-    dataFiles = glob.glob("%s/*.%s" % (dirName, dataType))
+    dataFiles = glob.glob("%s%s*.%s" % (dirName, os.sep, dataType))
     return loadFeaturesFromList(dataFiles, dataType, dataLabel)
         
 def loadFeaturesFromFile(fileName):
@@ -97,7 +97,7 @@ def loadFeaturesFromList(dataFiles, dataType, labelExtension="metadata", classRe
 
         if dataType.find("tfidf") != -1 or dataType == "freq" or dataType == "util" or dataType == "hmm":
             # Load features as numerical
-            dataPoints.append([float(x) for x in open(dataFile).read()[1:-1].split(',')])
+            dataPoints.append([float(x.strip()) for x in open(dataFile).read()[2:-2].split(',')])
             #print dataPoints
         elif dataType == "triton":
            # Load features as numerical/nominal
@@ -343,7 +343,7 @@ def filterTraces(sourceDir, inExtension, filterMode, outExtension, targetFunctio
     memReg = r'0x\w+'
 
     # Retrieve list of files from input dir
-    allfiles = glob.glob("%s/*.%s" % (sourceDir, inExtension))
+    allfiles = glob.glob("%s%s*.%s" % (sourceDir, os.sep, inExtension))
     if len(allfiles) < 1:
         prettyPrint("Unable to retrieve \"*.%s\" from \"%s\"" % (inExtension, sourceDir), "warning")
         return False
@@ -351,9 +351,14 @@ def filterTraces(sourceDir, inExtension, filterMode, outExtension, targetFunctio
     prettyPrint("Successfully retrieved %s \"*.%s\" from \"%s\"" % (len(allfiles), inExtension, sourceDir), "debug")
     filecounter = 0
     previousline = ""
+    outputfile = None
     # Loop on retrieved file and filter their content
     for inputfile in allfiles:
-        prettyPrint("Processing file: %s, #%s out of %s" % (inputfile, filecounter+1, len(allfiles)), "debug")
+        # prettyPrint("Processing file: %s, #%s out of %s" % (inputfile, filecounter+1, len(allfiles)), "debug")
+        if os.path.exists(inputfile.replace(inExtension, outExtension)):
+            # prettyPrint("File already processed - skipping...", "debug")
+            filecounter += 1
+            continue
         content = open(inputfile).read()
         outputfile = open(inputfile.replace(inExtension, outExtension), "w")
         alllines = content.split('\n')
@@ -418,6 +423,7 @@ def filterTraces(sourceDir, inExtension, filterMode, outExtension, targetFunctio
         filecounter += 1
 
     prettyPrint("Successfully processed %s \"*.%s\"." % (filecounter, inExtension), "debug")
-    outputfile.close()
+    if outputfile:
+        outputfile.close()
     return True
 

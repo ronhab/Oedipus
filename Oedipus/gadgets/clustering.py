@@ -19,7 +19,7 @@ def agglomerativeClustering(sourceFiles, fileExtension):
     try:
         accuracy = 0
         # Step 1 - Check the required algorithm to specify the data type to load
-        dataFiles = glob.glob("%s/*.%s" % (arguments.sourcedir, arguments.datatype)) # Get the paths of files to load
+        dataFiles = glob.glob("%s%s*.%s" % (arguments.sourcedir, os.sep, arguments.datatype)) # Get the paths of files to load
         dataSamples, dataLabels, loadedClusters = [], [], []
         for dataPoint in dataFiles:
             dataSamples.append([float(x) for x in open(dataPoint).read()[1:-1].split(",")])
