@@ -103,12 +103,13 @@ def classifyNaiveBayes(Xtr, ytr, Xte, yte, reduceDim="none", targetDim=0):
     return accuracyRate, timing, probabilities, predicted
 
 
-def classifyNaiveBayesKFold(X, y, kFold=2, reduceDim="none", targetDim=0):
+def classifyNaiveBayesKFold(X, y, originalPrograms, kFold=2, reduceDim="none", targetDim=0, exp2=False):
     """ Classifies data using Naive Bayes and K-Fold cross validation """
     try:
         groundTruthLabels, predictedLabels = [], []
         accuracyRates = [] # Meant to hold the accuracy rates
         # Split data into training and test datasets
+        originalProgramsSet = list(set(originalPrograms))
         trainingDataset, testDataset = [], []
         trainingLabels, testLabels = [], []
         accuracyRates = []
@@ -120,17 +121,29 @@ def classifyNaiveBayesKFold(X, y, kFold=2, reduceDim="none", targetDim=0):
         else:
             X_new = X
         # Now carry on with classification
-        kFoldValidator = KFold(n=len(X_new), n_folds=kFold, shuffle=False)
+        kFoldValidator = KFold(n=len(X_new) if not exp2 else len(originalProgramsSet), n_folds=kFold, shuffle=False)
         # Make sure values are positive because MultinomialNB doesn't take negative features
         X_new = flipSign(X_new, "+")
         for trainingIndices, testIndices in kFoldValidator:
             # Prepare the training and testing datasets
-            for trIndex in trainingIndices:
-                trainingDataset.append(X_new[trIndex])
-                trainingLabels.append(y[trIndex])
-            for teIndex in testIndices:
-                testDataset.append(X_new[teIndex])
-                testLabels.append(y[teIndex])
+            if not exp2:
+                for trIndex in trainingIndices:
+                    trainingDataset.append(X_new[trIndex])
+                    trainingLabels.append(y[trIndex])
+                for teIndex in testIndices:
+                    testDataset.append(X_new[teIndex])
+                    testLabels.append(y[teIndex])
+            else:
+                for i in range(len(X)):
+                    programIndex = originalProgramsSet.index(originalPrograms[i])
+                    if programIndex in trainingIndices:
+                        trainingDataset.append(X_new[i])
+                        trainingLabels.append(y[i])
+                    elif programIndex in testIndices:
+                        testDataset.append(X_new[i])
+                        testLabels.append(y[i])
+                    else:
+                        raise "%s not in training or test dataset" % originalPrograms[i]
             # Perform classification
             startTime = time.time()
             nbClassifier = MultinomialNB()
@@ -190,27 +203,40 @@ def classifyTree(Xtr, ytr, Xte, yte, splitCriterion="gini", maxDepth=0, visualiz
 
     return accuracyRate, timing, probabilities, predicted
 
-def classifyTreeKFold(X, y, kFold=2, splitCriterion="gini", maxDepth=0, visualizeTree=False):
+def classifyTreeKFold(X, y, originalPrograms, kFold=2, splitCriterion="gini", maxDepth=0, visualizeTree=False, exp2=False):
     """ Classifies data using CART and K-Fold cross validation """
     try:
         groundTruthLabels, predictedLabels = [], []
         accuracyRates = [] # Meant to hold the accuracy rates
         # Split data into training and test datasets
+        originalProgramsSet = list(set(originalPrograms))
         trainingDataset, testDataset = [], []
         trainingLabels, testLabels = [], []
         accuracyRates = []
         probabilities = []
         timings = []
-        kFoldValidator = KFold(n=len(X), n_folds=kFold, shuffle=False)
+        kFoldValidator = KFold(n=len(X) if not exp2 else len(originalProgramsSet), n_folds=kFold, shuffle=False)
         currentFold = 1
         for trainingIndices, testIndices in kFoldValidator:
             # Prepare the training and testing datasets
-            for trIndex in trainingIndices:
-                trainingDataset.append(X[trIndex])
-                trainingLabels.append(y[trIndex])
-            for teIndex in testIndices:
-                testDataset.append(X[teIndex])
-                testLabels.append(y[teIndex])
+            if not exp2:
+                for trIndex in trainingIndices:
+                    trainingDataset.append(X[trIndex])
+                    trainingLabels.append(y[trIndex])
+                for teIndex in testIndices:
+                    testDataset.append(X[teIndex])
+                    testLabels.append(y[teIndex])
+            else:
+                for i in range(len(X)):
+                    programIndex = originalProgramsSet.index(originalPrograms[i])
+                    if programIndex in trainingIndices:
+                        trainingDataset.append(X[i])
+                        trainingLabels.append(y[i])
+                    elif programIndex in testIndices:
+                        testDataset.append(X[i])
+                        testLabels.append(y[i])
+                    else:
+                        raise "%s not in training or test dataset" % originalPrograms[i]
             # Perform classification
             startTime = time.time()
             cartClassifier = tree.DecisionTreeClassifier(criterion=splitCriterion, max_depth=maxDepth)

@@ -77,7 +77,7 @@ def loadFeaturesFromList(dataFiles, dataType, labelExtension="metadata", classRe
         prettyPrint("No data files of type \"%s\" were found." % dataType, "warning")
         return numpy.array([]), numpy.array([])
     # Iterate over files adding their values to an array
-    dataPoints, dataLabels, allClasses = [], [], []
+    dataPoints, dataLabels, originalPrograms = [], [], []
     labelFile = "" # TODO: Again for KLEE test files
     for dataFile in dataFiles:
         currentExtension = dataFile[dataFile.rfind("."):]
@@ -97,7 +97,15 @@ def loadFeaturesFromList(dataFiles, dataType, labelExtension="metadata", classRe
 
         if dataType.find("tfidf") != -1 or dataType == "freq" or dataType == "util" or dataType == "hmm":
             # Load features as numerical
-            dataPoints.append([float(x.strip()) for x in open(dataFile).read()[2:-2].split(',')])
+            retry = True
+            while (retry):
+                try:
+                    dataPoints.append([float(x.strip()) for x in open(dataFile).read()[2:-2].split(',')])
+                    originalPrograms.append(os.path.basename(dataFile).split('_')[0])
+                    retry = False
+                except ValueError:
+                    print('error during feature loading. file: {0}'.format(dataFile))
+                    input('press ENTER to retry...')
             #print dataPoints
         elif dataType == "triton":
            # Load features as numerical/nominal
@@ -138,7 +146,7 @@ def loadFeaturesFromList(dataFiles, dataType, labelExtension="metadata", classRe
             classReference.append(currentClass)
             dataLabels.append(classReference.index(currentClass)) # Add an index as the class label
     # Now return the data points and labels as lists
-    return dataPoints, dataLabels, classReference
+    return dataPoints, dataLabels, classReference, originalPrograms
 
 def loadLabelFromFile(fileName):
     """ Loads clusters from file into a string """

@@ -24,14 +24,14 @@ import shutil, glob, argparse, random
 import numpy
 
 def write_checkpoint(stage):
-    with open('checkpoint.txt', 'w') as checkpoint_file:
+    with open('checkpoint2.txt', 'w') as checkpoint_file:
         checkpoint_file.write(str(stage))
 
 def checkpoint(stage):
     last_stage = 0
     result = False
-    if os.path.exists('checkpoint.txt'):
-        with open('checkpoint.txt', 'r') as checkpoint_file:
+    if os.path.exists('checkpoint2.txt'):
+        with open('checkpoint2.txt', 'r') as checkpoint_file:
             last_stage = int(checkpoint_file.read().strip())
     if last_stage > stage:
         result = True
@@ -40,21 +40,14 @@ def checkpoint(stage):
     return result
 
 def main():
-    source_dir = 'D:\\BGU\\dataset\\home\\vagrant\\random_programs'
-    number_of_programs = 2000
+    source_dir = '/home/vagrant/simple_programs'
     tigress_dir = '/oedipus/tigress-2.2'
     obfuscation_level = 1
-    obfuscation_function = 'SECRET'
+    obfuscation_function = 'main'
     max_features = 1000
     kfold = 10
-
-    if not checkpoint(1):
-        if random_programs.generate_random_programs(source_dir, number_of_programs, obfuscation_function):
-            prettyPrint("Successfully generated %d random programs" % number_of_programs)
-        else:
-            prettyPrint("Some error occurred during random program generation", "warning")
     
-    if not checkpoint(2):
+    if not checkpoint(1):
         # Get programs from source directory [random/pre-existent]
         sourceFiles = sorted(glob.glob("%s%s*.c" % (source_dir, os.sep)))
         if len(sourceFiles) < 1:
@@ -64,7 +57,7 @@ def main():
         generationStatus = program_generation.generateObfuscatedPrograms(sourceFiles, tigress_dir, obfuscation_level, obfuscation_function)
         prettyPrint("Successfully generated obfuscated programs")
     
-    if not checkpoint(3):
+    if not checkpoint(2):
         if not os.path.exists(source_dir):
             prettyPrint("Unable to locate \"%s\". Exiting" % source_dir, "error")
             return
@@ -88,7 +81,7 @@ def main():
         prettyPrint("Successfully generated traces")
         cleanUp()
 
-    if not checkpoint(4):
+    if not checkpoint(3):
         flavors = ['objdump', 'objdumps']
         tfidf_flavors = ['tfidfobj', 'tfidfobjs']
         for i,flavor in enumerate(flavors):
@@ -106,7 +99,7 @@ def main():
                     prettyPrint("Some error occurred during TF-IDF feature extraction", "error")
                     return
     
-    if not checkpoint(5):
+    if not checkpoint(4):
         experiences = ['exp1', 'exp2']
         for exp in experiences:
             data_flavors = ['tfidfobj', 'tfidfobjs', 'tfidfobj_both', 'tfidfobjs_both']
@@ -116,9 +109,9 @@ def main():
                     if algo == 'bayes':
                         X, y, allClasses, originalPrograms = loadFeaturesFromDir(source_dir, flavor, 'label')
                         for reduction_method in ['selectkbest', 'pca', 'none']:
-                            if os.path.exists("accuracy_%s_%s_%s_%s.pdf" % (flavor, exp, algo, reduction_method)):
+                            if os.path.exists("accuracy_%s_%s_%s_%s_simple.pdf" % (flavor, exp, algo, reduction_method)):
                                     continue
-                            classificationLog = open("classificationlog_%s_%s_%s_%s.txt" % (flavor, exp, reduction_method, algo), "a") # A file to log all classification labels
+                            classificationLog = open("classificationlog_%s_%s_%s_%s_simple.txt" % (flavor, exp, reduction_method, algo), "a") # A file to log all classification labels
                             classificationLog.write("Experiment 1 - Algorithm: %s, Datatype: %s\n" % (algo, flavor))
                             if reduction_method == "selectkbest":
                                 accuracies, timings = [], []
@@ -137,7 +130,7 @@ def main():
                                 classificationLog.close()
                                 # Plot accuracies graph
                                 prettyPrint("Plotting accuracies")
-                                data_visualization.plotAccuracyGraph(targetDimensions, accuracies, "Number of Selected Features", "Classification Accuracy", "Classification Accuracy: Selected Features (%s)" % flavor, "accuracy_%s_%s_%s_selectkbest.pdf" % (flavor, exp, algo)) 
+                                data_visualization.plotAccuracyGraph(targetDimensions, accuracies, "Number of Selected Features", "Classification Accuracy", "Classification Accuracy: Selected Features (%s)" % flavor, "accuracy_%s_%s_%s_selectkbest_simple.pdf" % (flavor, exp, algo)) 
                                 # Plot performance graph
                                 print(timings)
                             elif reduction_method == "pca":
@@ -157,7 +150,7 @@ def main():
                                 classificationLog.close()
                                 # Plot accuracies graph
                                 prettyPrint("Plotting accuracies")
-                                data_visualization.plotAccuracyGraph(targetDimensions, accuracies, "Number of Extracted Features", "Classification Accuracy", "Classification Accuracy: PCA (%s)" % flavor, "accuracy_%s_%s_%s_pca.pdf" % (flavor, exp, algo))
+                                data_visualization.plotAccuracyGraph(targetDimensions, accuracies, "Number of Extracted Features", "Classification Accuracy", "Classification Accuracy: PCA (%s)" % flavor, "accuracy_%s_%s_%s_pca_simple.pdf" % (flavor, exp, algo))
                                 # Plot performance graph
                                 print(timings)
                             else:    
@@ -170,9 +163,9 @@ def main():
                         # Load data from source directory
                         X, y, allClasses, originalPrograms = loadFeaturesFromDir(source_dir, flavor, 'label')
                         for splitting_criterion in ['gini', 'entropy']:
-                                if os.path.exists("accuracy_%s_%s_%s_%s.pdf" % (flavor, exp, splitting_criterion, algo)):
+                                if os.path.exists("accuracy_%s_%s_%s_%s_simple.pdf" % (flavor, exp, splitting_criterion, algo)):
                                     continue
-                                classificationLog = open("classificationlog_%s_%s_%s_%s.txt" % (flavor, exp, splitting_criterion, algo), "a") # A file to log all classification labels
+                                classificationLog = open("classificationlog_%s_%s_%s_%s_simple.txt" % (flavor, exp, splitting_criterion, algo), "a") # A file to log all classification labels
                                 classificationLog.write("Experiment 1 - Algorithm: %s, Datatype: %s\n" % (algo, flavor))
                                 accuracies, timings, allDepths = [], [], [2,3,4,5,6,7,8,10,12,14,16]#,32,64]
                                 for maxDepth in allDepths:
@@ -190,7 +183,7 @@ def main():
                                 classificationLog.close()
                                 # Plot accuracies graph
                                 prettyPrint("Plotting accuracies for \"%s\" criterion" % splitting_criterion)
-                                data_visualization.plotAccuracyGraph(allDepths, accuracies, "Maximum Tree Depth", "Classification Accuracy", "Classification Accuracy: %s (%s)" % (splitting_criterion, flavor), "accuracy_%s_%s_%s_%s.pdf" % (flavor, exp, splitting_criterion, algo))
+                                data_visualization.plotAccuracyGraph(allDepths, accuracies, "Maximum Tree Depth", "Classification Accuracy", "Classification Accuracy: %s (%s)" % (splitting_criterion, flavor), "accuracy_%s_%s_%s_%s_simple.pdf" % (flavor, exp, splitting_criterion, algo))
                                 print(timings)
 
 if __name__ == "__main__":

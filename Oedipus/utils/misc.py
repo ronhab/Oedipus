@@ -21,9 +21,9 @@ def cleanUp():
     scripts = glob.glob(".%s*.script" % os.sep)
     for script in scripts:
         os.unlink(script)
-    texts = glob.glob(".%s*.txt" % os.sep)
-    for text in texts:
-        os.unlink(text)
+    # texts = glob.glob(".%s*.txt" % os.sep)
+    # for text in texts:
+    #     os.unlink(text)
     if os.path.exists("log.txt"):
         os.unlink("log.txt")
     if os.path.exists("program.txt"):
