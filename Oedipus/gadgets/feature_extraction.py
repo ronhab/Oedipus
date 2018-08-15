@@ -14,6 +14,8 @@ from gensim import corpora, models, similarities
 from gensim.corpora import dictionary
 from sklearn.decomposition import TruncatedSVD
 from sklearn.feature_extraction.text import TfidfVectorizer, TfidfTransformer
+from sklearn.externals import joblib
+
 #############################
 # Defining Global Variables #
 #############################
@@ -632,6 +634,18 @@ class MyCorpus(object):
         for doc in self.documents:
             yield self.tokens.doc2bow(open(doc).read().lower().split())#, return_missing=True)
 
+class DocumentsIterator(object):
+    def __init__(self, docs):
+        self.documents = docs
+
+    def  __iter__(self):
+        count = 0
+        size = len(self.documents)
+        for doc in self.documents:
+            count += 1
+            print 'file no. %d requested - out of %d files' % (count, size)
+            yield open(doc).read()
+
 def cmpTuple(x,y):
 #    if type(x) != tuple or type(y) != tuple or not len(x) == len(y) == 2:
 #        return 0
@@ -736,6 +750,119 @@ def extractTFIDFMemoryFriendly(source, fileextension, maxfeatures=128, outextens
 
     except Exception as e:
         prettyPrint("Error encountered in \"extractTFIDFMemoryFriendly\": %s" % traceback.format_exc(), "error")
+        return False
+
+    return True
+
+# def extractTFIDFMemoryFriendlyCrossDatasets(trainPath, testPath, fileextension, maxfeatures=128, outextension="tfidf"):
+#     """ Extracts TF-IDF features from corpus using the memory friendly gensim library """
+#     try:
+#         # Retrieve files (source can be a path or a list of files names)
+#         trainfiles = glob.glob("%s%s*.%s" % (trainPath, os.sep, fileextension))
+#         testfiles = glob.glob("%s%s*.%s" % (testPath, os.sep, outextension))
+#         tfidffiles = glob.glob("%s%s*.%s" % (testPath, os.sep, outextension))
+#         if len(testfiles) == len(tfidffiles):
+#             prettyPrint("All TF-IDF files were already generated - leaving...")
+#             return True
+#         # Sort the list either way
+#         trainfiles.sort() # Can be removed 
+#         if len(allfiles) < 1:
+#             prettyPrint("No files of extension \"%s\" could be found in \"%s\"" % (fileextension, trainPath), "warning")
+#             return False
+#         prettyPrint("Successfully retrieved %s files" % len(trainfiles))
+
+#         # Now instantiate an instance of the MyCorpus class
+#         corpus_mem_friendly_train = MyCorpus(trainfiles)
+#         # Save the tokens to file and load them again just to get the cross-document count (:s)
+#         filename = "corpus_%s_%s_train" % (str(int(time.time())), fileextension)
+#         corpus_mem_friendly_train.tokens.save_as_text(filename)
+        
+#         print('train corpus: {0}'.format(filename))
+#         tokens = open(filename).read().split('\n')
+#         tokenTuples = []
+#         for t in tokens:
+#             if len(t) > 1:
+#                 t_split = t.split('\t')
+#                 if (len(t_split) >= 3):
+#                     tokenTuples.append((int(t_split[0]), int(t_split[2])))
+#                 else:
+#                     prettyPrint('token {0} has invalid format'.format(t), Warning)
+#         # Now sort them descendingly
+#         prettyPrint("Sorting the tokens according to their document frequency")
+#         tokenTuples.sort(key=itemgetter(1), reverse=True)
+
+#         # Build a numpy matrix of zeros
+#         X = numpy.zeros((len(allfiles), maxfeatures))
+
+#         # Go over the first [maxfeatures] of the tokenTuples and populate the matrix
+#         prettyPrint("Picking the best %s features from the sorted tokens list" % maxfeatures)
+#         for vectorIndex, vector in enumerate(corpus_mem_friendly):
+#             prettyPrint("Processing vector #%d" % (vectorIndex+1))
+#             for featureIndex in range(min(maxfeatures, len(tokenTuples))):
+#                 # a. Get the token key
+#                 tokenKey = tokenTuples[featureIndex][0]
+#                 X[vectorIndex][featureIndex] = getTupleKey(vector, tokenKey)
+           
+#         # Now apply the TF-IDF transformation
+#         optimusPrime = TfidfTransformer()
+#         prettyPrint("Extracting TF-IDF features")
+#         X_tfidf = optimusPrime.fit_transform(X)
+
+#         prettyPrint("Saving TF-IDF vectors to \"%s\" files" % outextension)
+#         for doc_index in range(len(allfiles)):
+#             tfidf_file = open(allfiles[doc_index].replace(fileextension, outextension), "w")
+#             tfidf_file.write(numpy.array2string(X_tfidf[doc_index, :], separator=','))
+#             tfidf_file.close()
+
+#         # os.unlink(filename) 
+
+#     except Exception as e:
+#         prettyPrint("Error encountered in \"extractTFIDFMemoryFriendly\": %s" % traceback.format_exc(), "error")
+#         return False
+
+#     return True
+
+def extractTFIDFWithVectorizer(train_files, test_files, max_features=128, out_extension="tfidf_vec", save_train=True, vectorizer_file=None):
+    try:
+        prettyPrint("Extracting TF-IDF features")
+        train_iter = DocumentsIterator(train_files)
+        vectorizer = TfidfVectorizer(max_df=1.0, min_df=1, max_features=max_features, token_pattern='\S+', norm='l2', smooth_idf=True, use_idf=True, sublinear_tf=False)
+        X = vectorizer.fit_transform(train_iter)
+        if save_train:
+            for row, train in enumerate(train_files):
+                out_filename = os.path.splitext(train)[0] + '.%s' % out_extension
+                with open(out_filename, 'w') as out_file:
+                    out_file.write(numpy.array2string(X[row, :], separator=','))
+        if vectorizer_file:
+            joblib.dump(vectorizer, vectorizer_file)
+
+        test_iter = DocumentsIterator(test_files)
+        X = vectorizer.transform(test_iter)
+        for row, test in enumerate(test_files):
+            out_filename = os.path.splitext(test)[0] + '.%s' % out_extension
+            with open(out_filename, 'w') as out_file:
+                out_file.write(numpy.array2string(X[row, :], separator=','))
+
+    except Exception as e:
+        prettyPrint("Error encountered in \"extractTFIDFWithVectorizer\": %s" % traceback.format_exc(), "error")
+        return False
+
+    return True
+
+def extractTFIDFWithSavedVectorizer(vectorizer_file, test_files, out_extension="tfidf_vec"):
+    try:
+        prettyPrint("Loading vectorizer")
+        vectorizer = joblib.load(vectorizer_file)
+
+        test_iter = DocumentsIterator(test_files)
+        X = vectorizer.transform(test_iter)
+        for row, test in enumerate(test_files):
+            out_filename = os.path.splitext(test)[0] + '.%s' % out_extension
+            with open(out_filename, 'w') as out_file:
+                out_file.write(numpy.array2string(X[row, :], separator=','))
+
+    except Exception as e:
+        prettyPrint("Error encountered in \"extractTFIDFWithVectorizer\": %s" % traceback.format_exc(), "error")
         return False
 
     return True

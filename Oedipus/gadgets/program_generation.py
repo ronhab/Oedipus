@@ -49,7 +49,7 @@ def generateMultipleObfuscations(currentFile, tigressDir, obfuscationLevel=1, ob
                 # Add the necessary "#include" for Jitting to a copy of the file
                 if transformation == "Jit":
                     fileContent = open(currentFile).read()
-                    fileContent = "#include \"%s%sjitter-amd64.c\"\n" % (tigressDir + fileContent, os.sep)
+                    fileContent = "#include \"%s%sjitter-amd64.c\"\n" % (tigressDir, os.sep) + fileContent
                     copyFile = open(currentFile.replace(".c", "_jitcopy.c"), "w")
                     copyFile.write(fileContent)
                     copyFile.close()

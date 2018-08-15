@@ -24,14 +24,14 @@ import shutil, glob, argparse, random
 import numpy
 
 def write_checkpoint(stage):
-    with open('checkpoint2.txt', 'w') as checkpoint_file:
+    with open('checkpoint4.txt', 'w') as checkpoint_file:
         checkpoint_file.write(str(stage))
 
 def checkpoint(stage):
     last_stage = 0
     result = False
-    if os.path.exists('checkpoint2.txt'):
-        with open('checkpoint2.txt', 'r') as checkpoint_file:
+    if os.path.exists('checkpoint4.txt'):
+        with open('checkpoint4.txt', 'r') as checkpoint_file:
             last_stage = int(checkpoint_file.read().strip())
     if last_stage > stage:
         result = True
@@ -40,7 +40,7 @@ def checkpoint(stage):
     return result
 
 def main():
-    source_dir = '/home/vagrant/simple_programs'
+    source_dir = 'D:\\BGU\\Oedipus\\another_simple_programs'
     tigress_dir = '/oedipus/tigress-2.2'
     obfuscation_level = 1
     obfuscation_function = 'main'
@@ -110,9 +110,9 @@ def main():
                     if algo == 'bayes':
                         X, y, allClasses, originalPrograms = loadFeaturesFromDir(source_dir, flavor, 'label')
                         for reduction_method in ['selectkbest', 'pca', 'none']:
-                            if os.path.exists("accuracy_%s_%s_%s_%s_simple.pdf" % (flavor, exp, algo, reduction_method)):
+                            if os.path.exists("accuracy_%s_%s_%s_%sanother_simple.pdf" % (flavor, exp, algo, reduction_method)):
                                     continue
-                            classificationLog = open("classificationlog_%s_%s_%s_%s_simple.txt" % (flavor, exp, reduction_method, algo), "a") # A file to log all classification labels
+                            classificationLog = open("classificationlog_%s_%s_%s_%sanother_simple.txt" % (flavor, exp, reduction_method, algo), "a") # A file to log all classification labels
                             classificationLog.write("Experiment 1 - Algorithm: %s, Datatype: %s\n" % (algo, flavor))
                             if reduction_method == "selectkbest":
                                 accuracies, timings = [], []
@@ -131,7 +131,7 @@ def main():
                                 classificationLog.close()
                                 # Plot accuracies graph
                                 prettyPrint("Plotting accuracies")
-                                data_visualization.plotAccuracyGraph(targetDimensions, accuracies, "Number of Selected Features", "Classification Accuracy", "Classification Accuracy: Selected Features (%s)" % flavor, "accuracy_%s_%s_%s_selectkbest_simple.pdf" % (flavor, exp, algo)) 
+                                data_visualization.plotAccuracyGraph(targetDimensions, accuracies, "Number of Selected Features", "Classification Accuracy", "Classification Accuracy: Selected Features (%s)" % flavor, "accuracy_%s_%s_%s_selectkbestanother_simple.pdf" % (flavor, exp, algo)) 
                                 # Plot performance graph
                                 print(timings)
                             elif reduction_method == "pca":
@@ -151,7 +151,7 @@ def main():
                                 classificationLog.close()
                                 # Plot accuracies graph
                                 prettyPrint("Plotting accuracies")
-                                data_visualization.plotAccuracyGraph(targetDimensions, accuracies, "Number of Extracted Features", "Classification Accuracy", "Classification Accuracy: PCA (%s)" % flavor, "accuracy_%s_%s_%s_pca_simple.pdf" % (flavor, exp, algo))
+                                data_visualization.plotAccuracyGraph(targetDimensions, accuracies, "Number of Extracted Features", "Classification Accuracy", "Classification Accuracy: PCA (%s)" % flavor, "accuracy_%s_%s_%s_pcaanother_simple.pdf" % (flavor, exp, algo))
                                 # Plot performance graph
                                 print(timings)
                             else:    
@@ -164,9 +164,9 @@ def main():
                         # Load data from source directory
                         X, y, allClasses, originalPrograms = loadFeaturesFromDir(source_dir, flavor, 'label')
                         for splitting_criterion in ['gini']:
-                                if os.path.exists("accuracy_%s_%s_%s_%s_simple.pdf" % (flavor, exp, splitting_criterion, algo)):
+                                if os.path.exists("accuracy_%s_%s_%s_%sanother_simple.pdf" % (flavor, exp, splitting_criterion, algo)):
                                     continue
-                                classificationLog = open("classificationlog_%s_%s_%s_%s_simple.txt" % (flavor, exp, splitting_criterion, algo), "a") # A file to log all classification labels
+                                classificationLog = open("classificationlog_%s_%s_%s_%sanother_simple.txt" % (flavor, exp, splitting_criterion, algo), "a") # A file to log all classification labels
                                 classificationLog.write("Experiment 1 - Algorithm: %s, Datatype: %s\n" % (algo, flavor))
                                 accuracies, timings, allDepths = [], [], [4,6,8,10,12]#,32,64]
                                 for maxDepth in allDepths:
@@ -184,7 +184,7 @@ def main():
                                 classificationLog.close()
                                 # Plot accuracies graph
                                 prettyPrint("Plotting accuracies for \"%s\" criterion" % splitting_criterion)
-                                data_visualization.plotAccuracyGraph(allDepths, accuracies, "Maximum Tree Depth", "Classification Accuracy", "Classification Accuracy: %s (%s)" % (splitting_criterion, flavor), "accuracy_%s_%s_%s_%s_simple.pdf" % (flavor, exp, splitting_criterion, algo))
+                                data_visualization.plotAccuracyGraph(allDepths, accuracies, "Maximum Tree Depth", "Classification Accuracy", "Classification Accuracy: %s (%s)" % (splitting_criterion, flavor), "accuracy_%s_%s_%s_%sanother_simple.pdf" % (flavor, exp, splitting_criterion, algo))
                                 print(timings)
 
 if __name__ == "__main__":
