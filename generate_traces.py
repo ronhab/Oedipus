@@ -30,7 +30,7 @@ def main():
         return
     print("Successfully generated traces")
     print("Filtering traces")
-    if filterTraces(programs_dir, 'objdumps', 'both', 'tfidfobjs_both', obfuscated_function):
+    if filterTraces(programs_dir, 'objdumps', 'both', 'objdumps_both', obfuscated_function):
         print('Successfully filtered traces')
     else:
         print('Some error occurred during filteration')

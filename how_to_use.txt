@@ -1,0 +1,11 @@
+On Linux machine:
+1. python generate_random_programs.py /home/vagrant/test_dataset 10 SECRET
+2. python obfuscate_programs.py /home/vagrant/test_dataset /oedipus/tigress-2.2 SECRET 1
+3. python generate_traces.py /home/vagrant/test_dataset SECRET
+
+On Windows machine:
+4. python create_tfidf_vectorizer.py D:\BGU\Oedipus\test_dataset 1000 test_dataset_vec.pkl
+5. python generate_dataset_csv.py D:\BGU\Oedipus\test_dataset test_dataset_vec.pkl test_dataset_self_tfidf.csv test_dataset_labels.csv
+
+6. python test_tree_across_datasets.py
+7. python test_ann_across_datasets.py

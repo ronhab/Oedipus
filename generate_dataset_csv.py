@@ -3,6 +3,7 @@ from Oedipus.utils.data import loadLabelFromFile
 import sys, os, glob
 from sklearn.externals import joblib
 import pandas as pd
+import numpy as np
 
 def main():
     if len(sys.argv) != 5:
@@ -22,15 +23,15 @@ def main():
     features_csv = sys.argv[3]
     labels_csv = sys.argv[4]
 
-    trace_files = sorted(glob.glob("{0}/*.tfidfobjs_both".format(traces_dir)))
+    trace_files = sorted(glob.glob("{0}/*.objdumps_both".format(traces_dir)))
     if len(trace_files) < 1:
-        print('Error: No *.tfidfobjs_both trace files were found in {0}'.format(traces_dir))
+        print('Error: No *.objdumps_both trace files were found in {0}'.format(traces_dir))
         return
 
     label_files = []
     valid_trace_files = []
     for trace in trace_files:
-        label_file = trace.replace(".tfidfobjs_both", ".label")
+        label_file = trace.replace(".objdumps_both", ".label")
         if os.path.exists(label_file):
             label_files.append(label_file)
             valid_trace_files.append(trace)
@@ -49,6 +50,11 @@ def main():
     Y = pd.DataFrame(Y_list)
     X.to_csv(features_csv, header=False, index=False)
     Y.to_csv(labels_csv, header=False, index=False)
+    indices = np.argsort(vectorizer.idf_)[::-1]
+    features = vectorizer.get_feature_names()
+    top_n = 10
+    top_features = [features[i] for i in indices[:top_n]]
+    print ('top features: {0}'.format(top_features))
 
 if __name__ == "__main__":
     main()

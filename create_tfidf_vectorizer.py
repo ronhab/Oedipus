@@ -20,9 +20,9 @@ def main():
 
     vectorizer_file = sys.argv[3]
 
-    trace_files = sorted(glob.glob("{0}/*.tfidfobjs_both".format(traces_dir)))
+    trace_files = sorted(glob.glob("{0}/*.objdumps_both".format(traces_dir)))
     if len(trace_files) < 1:
-        print('Error: No *.tfidfobjs_both trace files were found in {0}'.format(traces_dir))
+        print('Error: No *.objdumps_both trace files were found in {0}'.format(traces_dir))
         return
 
     vectorizer = createTFIDFVectorizer(trace_files, max_features)
