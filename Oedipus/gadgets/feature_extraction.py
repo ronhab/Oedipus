@@ -42,7 +42,7 @@ def compileFile(targetFile):
     subprocess.Popen(stripArgs, stderr=subprocess.STDOUT, stdout=subprocess.PIPE).communicate()[0]
     # Check if compilation succeeded by checking for existence of "a.out"
     if not os.path.exists(outFile):
-        print('Compiling "%s" failed. Skipping file'.format(targetFile))
+        print('Compiling {0} failed. Skipping file'.format(targetFile))
         return ""
         
     return outFile
@@ -71,50 +71,18 @@ class DocumentsIterator(object):
         size = len(self.documents)
         for doc in self.documents:
             count += 1
-            print 'file no. %d requested - out of %d files' % (count, size)
+            print('file no. {0} requested - out of {1} files'.format(count, size))
             yield open(doc).read()
 
-def extractTFIDFWithVectorizer(train_files, test_files, max_features=128, out_extension="tfidf_vec", save_train=True, vectorizer_file=None):
-    try:
-        prettyPrint("Extracting TF-IDF features")
-        train_iter = DocumentsIterator(train_files)
-        vectorizer = TfidfVectorizer(max_df=1.0, min_df=1, max_features=max_features, token_pattern='\S+', norm='l2', smooth_idf=True, use_idf=True, sublinear_tf=False)
-        X = vectorizer.fit_transform(train_iter)
-        if save_train:
-            for row, train in enumerate(train_files):
-                out_filename = os.path.splitext(train)[0] + '.%s' % out_extension
-                with open(out_filename, 'w') as out_file:
-                    out_file.write(numpy.array2string(X[row, :], separator=','))
-        if vectorizer_file:
-            joblib.dump(vectorizer, vectorizer_file)
+def createTFIDFVectorizer(traces, max_features):
+    print('Creating TFIDF Vectorizer')
+    train_iter = DocumentsIterator(traces)
+    vectorizer = TfidfVectorizer(max_df=1.0, min_df=1, max_features=max_features, token_pattern=r'\S+', norm='l2', smooth_idf=True, use_idf=True, sublinear_tf=False)
+    vectorizer.fit(train_iter)
+    return vectorizer
 
-        test_iter = DocumentsIterator(test_files)
-        X = vectorizer.transform(test_iter)
-        for row, test in enumerate(test_files):
-            out_filename = os.path.splitext(test)[0] + '.%s' % out_extension
-            with open(out_filename, 'w') as out_file:
-                out_file.write(numpy.array2string(X[row, :], separator=','))
-
-    except Exception as e:
-        prettyPrint("Error encountered in \"extractTFIDFWithVectorizer\": %s" % traceback.format_exc(), "error")
-        return False
-
-    return True
-
-def extractTFIDFWithSavedVectorizer(vectorizer_file, test_files, out_extension="tfidf_vec"):
-    try:
-        prettyPrint("Loading vectorizer")
-        vectorizer = joblib.load(vectorizer_file)
-
-        test_iter = DocumentsIterator(test_files)
-        X = vectorizer.transform(test_iter)
-        for row, test in enumerate(test_files):
-            out_filename = os.path.splitext(test)[0] + '.%s' % out_extension
-            with open(out_filename, 'w') as out_file:
-                out_file.write(numpy.array2string(X[row, :], separator=','))
-
-    except Exception as e:
-        prettyPrint("Error encountered in \"extractTFIDFWithVectorizer\": %s" % traceback.format_exc(), "error")
-        return False
-
-    return True
+def extractTFIDFWithVectorizer(vectorizer, traces):
+    prettyPrint("Extracting TF-IDF features")
+    train_iter = DocumentsIterator(traces)
+    X = vectorizer.transform(train_iter)
+    return X
